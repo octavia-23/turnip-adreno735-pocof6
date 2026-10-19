@@ -112,9 +112,10 @@ jobs:
           cd mesa-src
           ninja -C build-android src/freedreno/vulkan/libvulkan_freedreno.so
 
-      - name: Package Driver Zip for Emulators
+      - name: Package Driver Zip for Emulators and Native Ports
         run: |
           mkdir -p output/driver
+          cp mesa-src/build-android/src/freedreno/vulkan/libvulkan_freedreno.so output/driver/vulkan.ad07xx.so
           cp mesa-src/build-android/src/freedreno/vulkan/libvulkan_freedreno.so output/driver/vulkan.adreno.so
           cp meta.json output/driver/meta.json
           cd output/driver
@@ -124,17 +125,22 @@ jobs:
       - name: Upload Driver Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Turnip-Adreno735-8sGen3-v1.3.0
+          name: Turnip-Adreno735-8sGen3-v1.3.1
           path: output/turnip-adreno735-8sgen3-pocof6.zip
 
       - name: Publish to GitHub Releases
         uses: softprops/action-gh-release@v2
         if: github.ref == 'refs/heads/main'
         with:
-          tag_name: v1.3.0
-          name: "Turnip Adreno 735 v1.3.0 (POCO F6 / 8s Gen 3)"
+          tag_name: v1.3.1
+          name: "Turnip Adreno 735 v1.3.1 (POCO F6 / 8s Gen 3)"
           body: |
             Automated production build for Snapdragon 8s Gen 3 (`SM8635` / Adreno 735).
+            
+            ### Compatibility:
+            - Fully compatible with all Android Emulators (Winlator, Mobox, Sudachi, Suyu, Eden, Vita3K)
+            - Fully compatible with Unofficial Native Android Game Ports (AdrenoTools loader minApi: 27)
+            - Bundles both `vulkan.ad07xx.so` and `vulkan.adreno.so` targets.
             
             ### Included Optimization Stack:
             - **GMEM Binning Bias & Autotune Lock**: Eliminates sysmem fallback and runtime sampling stutter.
