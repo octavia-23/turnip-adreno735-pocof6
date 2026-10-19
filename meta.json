@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "name": "Turnip Adreno 735 Grandmaster (POCO F6 / 8s Gen 3)",
-  "description": "The Complete 8s Gen 3 Driver: GMEM-locked, FTZ denormals, forced UBWC, LRZ early-Z retention, KGSL batching, D24S8 fastpaths, 64B sampler alignment, 16MB contiguous pools, and embedded drirc profiles for Winlator/Sudachi/Vita3K.",
+  "name": "Turnip Adreno 735 (POCO F6 / 8s Gen 3)",
+  "description": "Tuned for SM8635: GMEM-locked, FTZ denormals, forced UBWC, LRZ early-Z, KGSL batching, D24S8 fastpaths, 64B alignment, 16MB pools, and drirc profiles.",
   "author": "Akshat Yadav",
   "packageVersion": "1.3.0",
   "vendor": "Mesa/Freedreno",
-  "driverVersion": "Mesa Turnip 25.0-Grandmaster (8s Gen 3 Tuned)",
+  "driverVersion": "Mesa Turnip 25.0 (SM8635 Tuned v1.3.0)",
   "minApi": 31,
   "libraryName": "vulkan.adreno.so"
 }
