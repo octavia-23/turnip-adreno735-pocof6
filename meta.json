@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "name": "Turnip Adreno 735 Extreme (POCO F6 / 8s Gen 3)",
-  "description": "Full Hardware Tuning: GMEM binning bias, FP16 NIR lowering, high wave occupancy, forced UBWC, aggressive LRZ early-Z rejection, KGSL batching, and 16MB contiguous pools.",
+  "name": "Turnip Adreno 735 Ultimate (POCO F6 / 8s Gen 3)",
+  "description": "Full Hardware Tuning + Community Inspirations: GMEM bias, FTZ denormals, Autotune clamped, forced UBWC, LRZ early-Z retention, KGSL batching, D24S8 fastpaths, 64B sampler alignment, and 16MB contiguous pools.",
   "author": "Akshat Yadav",
-  "packageVersion": "1.1.0",
+  "packageVersion": "1.2.0",
   "vendor": "Mesa/Freedreno",
-  "driverVersion": "Mesa Turnip 25.0-Extreme (8s Gen 3 Tuned)",
+  "driverVersion": "Mesa Turnip 25.0-Ultimate (8s Gen 3 Tuned)",
   "minApi": 31,
   "libraryName": "vulkan.adreno.so"
 }

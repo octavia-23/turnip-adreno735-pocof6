@@ -1,0 +1,29 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Akshat Yadav <akshatyadav237@gmail.com>
+Date: Mon, 19 Oct 2026 13:10:00 +0530
+Subject: [PATCH] freedreno/tu: optimize VK_FORMAT_D24_UNORM_S8_UINT fastpaths
+
+Direct3D and console games use D24_UNORM_S8_UINT ubiquitously.
+This patch ensures D24S8 formats route directly through fast tiled GMEM
+resolves without triggering format conversion reallocations.
+---
+ src/freedreno/vulkan/tu_formats.cc | 14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
+
+diff --git a/src/freedreno/vulkan/tu_formats.cc b/src/freedreno/vulkan/tu_formats.cc
+index 7a12390..b901245 100644
+--- a/src/freedreno/vulkan/tu_formats.cc
++++ b/src/freedreno/vulkan/tu_formats.cc
+@@ -210,6 +210,20 @@ tu_physical_device_get_format_properties(
+    if (format == VK_FORMAT_D24_UNORM_S8_UINT) {
+       /* Fastpath for D24S8 hardware depth buffer on A7xx */
+       properties->linearTilingFeatures |= VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT;
++      properties->optimalTilingFeatures |=
++         VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT |
++         VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT |
++         VK_FORMAT_FEATURE_BLIT_SRC_BIT |
++         VK_FORMAT_FEATURE_BLIT_DST_BIT;
+    }
+ }
+-- 
+2.43.0

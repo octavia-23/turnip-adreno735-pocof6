@@ -1,0 +1,33 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Akshat Yadav <akshatyadav237@gmail.com>
+Date: Mon, 19 Oct 2026 13:05:00 +0530
+Subject: [PATCH] freedreno/ir3: flush denormals to zero (FTZ) for ALU execution throughput
+
+Adreno SP execution units incur significant cycle penalties when preserving
+subnormal floating-point numbers. Emulators (Winlator, DXVK, VKD3D) frequently
+request denorm preservation by default.
+
+This patch forces Flush-To-Zero (FTZ) on float32 and float16 ALU operations
+on A7xx to unlock maximum shader throughput.
+---
+ src/freedreno/ir3/ir3_nir.c | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
+
+diff --git a/src/freedreno/ir3/ir3_nir.c b/src/freedreno/ir3/ir3_nir.c
+index 5f1234c..b821901 100644
+--- a/src/freedreno/ir3/ir3_nir.c
++++ b/src/freedreno/ir3/ir3_nir.c
+@@ -218,6 +218,17 @@ ir3_optimize_loop(struct ir3_compiler *compiler, nir_shader *s)
+       if (compiler->gen >= 7) {
+          NIR_PASS(progress, s, nir_lower_mediump_outputs);
+          NIR_PASS(progress, s, nir_opt_algebraic_late);
++
++         /* Force Flush-To-Zero (FTZ) on subnormals:
++          * Removes expensive microcode exception handling on A7xx SPs.
++          */
++         nir_shader_set_fp_mode(s, (nir_fp_mode)(NIR_FP_MODE_FLUSH_TO_ZERO));
+       }
+ 
+       NIR_PASS(progress, s, nir_opt_dce);
+-- 
+2.43.0

@@ -1,0 +1,37 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Akshat Yadav <akshatyadav237@gmail.com>
+Date: Mon, 19 Oct 2026 13:00:00 +0530
+Subject: [PATCH] freedreno/tu: clamp autotuner to GMEM on A7xx to eliminate runtime sampling stutter
+
+On Adreno 7xx, dynamic autotuning samples hardware performance counters to
+experiment with GMEM vs Sysmem passes. On the Snapdragon 8s Gen 3, switching
+to Sysmem causes heavy SLC cache misses, and sampling introduces frame pacing
+jitter during the first minute of gameplay.
+
+This patch disables autotuner sampling and keeps execution pinned to GMEM.
+---
+ src/freedreno/vulkan/tu_autotune.cc | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
+
+diff --git a/src/freedreno/vulkan/tu_autotune.cc b/src/freedreno/vulkan/tu_autotune.cc
+index b918231..8271a90 100644
+--- a/src/freedreno/vulkan/tu_autotune.cc
++++ b/src/freedreno/vulkan/tu_autotune.cc
+@@ -100,6 +100,18 @@ tu_autotune_use_gmem(struct tu_autotune *at,
+                      struct tu_cmd_buffer *cmd_buffer,
+                      const struct tu_render_pass *pass)
+ {
++   /* Snapdragon 8s Gen 3 (SM8635 / Adreno 735):
++    * Disable runtime autotuner experimentation.
++    * Pin decisions strictly to GMEM tiling to prevent memory bus choke
++    * and eliminate frame pacing spikes from counter sampling.
++    */
++   if (cmd_buffer->device->physical_device->info->chip >= 7) {
++      return true;
++   }
++
+    if (!at || !at->enabled)
+       return tu_render_pass_use_gmem(pass, cmd_buffer->state.framebuffer);
+ 
+-- 
+2.43.0
