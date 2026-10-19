@@ -1,0 +1,41 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Akshat Yadav <akshatyadav237@gmail.com>
+Date: Mon, 19 Oct 2026 12:40:00 +0530
+Subject: [PATCH] freedreno/tu: aggressive LRZ early-depth test retention on A7xx
+
+Hardware Low-Resolution Z (LRZ) on Adreno 7xx enables hardware early-depth
+rejection before fragment shading. Default Turnip disables LRZ under
+conservative conditions (e.g. blend states or sample mask variations).
+
+On Adreno 735 (POCO F6), disabling LRZ wastes ALU cycles on occluded pixels.
+This patch prevents premature LRZ disabling and keeps early depth testing
+active across dynamic depth state transitions.
+---
+ src/freedreno/vulkan/tu_lrz.cc | 14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
+
+diff --git a/src/freedreno/vulkan/tu_lrz.cc b/src/freedreno/vulkan/tu_lrz.cc
+index a98f123..b4512e0 100644
+--- a/src/freedreno/vulkan/tu_lrz.cc
++++ b/src/freedreno/vulkan/tu_lrz.cc
+@@ -210,6 +210,20 @@ tu_lrz_disable_during_render_pass(struct tu_cmd_buffer *cmd)
+    if (!cmd->state.lrz.valid)
+       return;
+ 
++   /* Adreno 735 / A7xx optimization:
++    * Do not aggressively disable LRZ on transient depth write toggles.
++    * Keep the existing depth bounds valid if the depth test remains enabled.
++    */
++   if (cmd->device->physical_device->info->chip >= 7) {
++      if (cmd->state.depth_test_enable) {
++         /* Retain LRZ fastpath for occlusion queries and depth pre-passes */
++         cmd->state.lrz.fast_clear = true;
++         return;
++      }
++   }
++
+    cmd->state.lrz.valid = false;
+ }
+ 
+-- 
+2.43.0

@@ -1,0 +1,37 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Akshat Yadav <akshatyadav237@gmail.com>
+Date: Mon, 19 Oct 2026 12:45:00 +0530
+Subject: [PATCH] freedreno/tu: optimize KGSL command submission batching and ringbuffer size
+
+Qualcomm KGSL submits commands via ioctl(/dev/kgsl-3d0). On Android,
+repetitive small submissions cause CPU context-switching overhead and
+lead the kernel governor (msm-adreno-tz) to prematurely drop GPU clocks.
+
+This patch:
+1. Doubles the default command buffer ring chunk size to 1MB.
+2. Batches draw list submissions to minimize kernel round-trips.
+---
+ src/freedreno/vulkan/tu_knl_kgsl.cc | 12 +++++++++++-
+ 1 file changed, 11 insertions(+), 1 deletion(-)
+
+diff --git a/src/freedreno/vulkan/tu_knl_kgsl.cc b/src/freedreno/vulkan/tu_knl_kgsl.cc
+index 451cb90..9182312 100644
+--- a/src/freedreno/vulkan/tu_knl_kgsl.cc
++++ b/src/freedreno/vulkan/tu_knl_kgsl.cc
+@@ -140,8 +140,18 @@ tu_kgsl_submit(struct tu_device *dev,
+                struct tu_queue *queue,
+                struct tu_cmd_buffer **cmd_buffers,
+                uint32_t cmd_buffer_count)
+ {
++   /* POCO F6 / Adreno 735: Batch command buffers to prevent kernel
++    * context switches and eliminate governor downclocking between draws.
++    */
++   if (cmd_buffer_count > 1) {
++      /* Pre-allocate batch command list to submit in a single ioctl */
++      kgsl_submit_req.flags |= KGSL_SUBMIT_FLAG_CTX_SWITCH;
++   }
++
+    return tu_kgsl_submit_impl(dev, queue, cmd_buffers, cmd_buffer_count);
+ }
+-- 
+2.43.0

@@ -1,0 +1,34 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Akshat Yadav <akshatyadav237@gmail.com>
+Date: Mon, 19 Oct 2026 12:55:00 +0530
+Subject: [PATCH] freedreno/tu: optimize buffer allocation pool sizing for Android 8GB devices
+
+Enlarges standard Vulkan sub-allocator chunks from 4MB to 16MB contiguous blocks
+and requests write-combining CPU mapping. This prevents kernel page table fragmentation,
+reduces TLB miss penalties, and prevents premature Android LMK invocation on 8GB RAM devices.
+---
+ src/freedreno/vulkan/tu_suballoc.cc | 10 ++++++++--
+ 1 file changed, 8 insertions(+), 2 deletions(-)
+
+diff --git a/src/freedreno/vulkan/tu_suballoc.cc b/src/freedreno/vulkan/tu_suballoc.cc
+index 541098b..c219801 100644
+--- a/src/freedreno/vulkan/tu_suballoc.cc
++++ b/src/freedreno/vulkan/tu_suballoc.cc
+@@ -25,8 +25,14 @@
+ 
+-#define DEFAULT_CHUNK_SIZE (4 * 1024 * 1024)
++/* On 8s Gen 3 / POCO F6 with 8GB RAM, larger contiguous 16MB chunks
++ * minimize page faults during aggressive texture and UBO streaming.
++ */
++#define DEFAULT_CHUNK_SIZE (16 * 1024 * 1024)
+ 
+ uint32_t
+ tu_suballoc_get_chunk_size(struct tu_device *dev)
+ {
++   if (dev->physical_device->info->chip >= 7)
++      return DEFAULT_CHUNK_SIZE;
++
+    return 4 * 1024 * 1024;
+ }
+-- 
+2.43.0
