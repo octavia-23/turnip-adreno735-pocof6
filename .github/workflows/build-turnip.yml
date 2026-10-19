@@ -89,6 +89,7 @@ jobs:
             -Dgles2=disabled \
             -Dglx=disabled \
             -Dopengl=false \
+            -Dzstd=disabled \
             -Dgallium-drivers= \
             -Dvulkan-drivers=freedreno \
             -Dfreedreno-kmds=kgsl \
