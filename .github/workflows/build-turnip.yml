@@ -19,8 +19,8 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y \
             build-essential \
-            meson \
             ninja-build \
+            python3-pip \
             python3-mako \
             python3-yaml \
             bison \
@@ -31,6 +31,7 @@ jobs:
             unzip \
             curl \
             git
+          pip3 install --break-system-packages meson
 
       - name: Setup Android NDK r26c
         run: |
@@ -64,7 +65,7 @@ jobs:
           cpp = 'aarch64-linux-android34-clang++'
           ar = 'llvm-ar'
           strip = 'llvm-strip'
-          pkgconfig = ['pkg-config']
+          pkg-config = ['pkg-config']
 
           [host_machine]
           system = 'android'
@@ -79,10 +80,10 @@ jobs:
           meson setup build-android \
             --cross-file ../android-aarch64.ini \
             -Dbuildtype=release \
-            -Doptimization=3 \
             -Dstrip=true \
             -Dplatforms=android \
             -Dplatform-sdk-version=34 \
+            -Dandroid-stub=true \
             -Dgallium-drivers= \
             -Dvulkan-drivers=freedreno \
             -Dfreedreno-kmds=kgsl,msm \
