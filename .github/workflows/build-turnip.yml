@@ -26,7 +26,6 @@ jobs:
             bison \
             flex \
             glslang-tools \
-            libspirv-tools-dev \
             pkg-config \
             zip \
             unzip \
