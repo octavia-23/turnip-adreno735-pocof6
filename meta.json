@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "name": "Turnip Adreno 735 Optimized (POCO F6 / 8s Gen 3)",
+  "description": "Tuned specifically for SM8635: GMEM-biased binning, aggressive FP16 lowering, high SP occupancy, and forced UBWC compression.",
+  "author": "Akshat Yadav",
+  "packageVersion": "1.0.0",
+  "vendor": "Mesa/Freedreno",
+  "driverVersion": "Mesa Turnip 25.0-devel (8s Gen 3 Tuned)",
+  "minApi": 31,
+  "libraryName": "vulkan.adreno.so"
+}

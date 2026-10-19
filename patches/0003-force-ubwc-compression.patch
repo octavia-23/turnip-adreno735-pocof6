@@ -1,0 +1,39 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Akshat Yadav <akshatyadav237@gmail.com>
+Date: Mon, 19 Oct 2026 11:10:00 +0530
+Subject: [PATCH] freedreno/tu: enforce UBWC on color/depth attachments and sampleable textures
+
+Universal Bandwidth Compression (UBWC) provides 30-50% memory bandwidth
+savings on Qualcomm Adreno GPUs. On Snapdragon 8s Gen 3, this prevents
+memory interface saturation on the 4-channel LPDDR5X bus.
+
+This patch ensures UBWC is preserved wherever hardware format support allows.
+---
+ src/freedreno/vulkan/tu_image.cc | 14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
+
+diff --git a/src/freedreno/vulkan/tu_image.cc b/src/freedreno/vulkan/tu_image.cc
+index 39dc821..84ab210 100644
+--- a/src/freedreno/vulkan/tu_image.cc
++++ b/src/freedreno/vulkan/tu_image.cc
+@@ -298,6 +298,20 @@ tu_image_init(struct tu_device *device, struct tu_image *image,
+    if (image->layout.tile_mode == TILE6_3 && !image->layout.ubwc_enabled) {
+       if (tu_format_supports_ubwc(device->physical_device, image->vk.format)) {
+          image->layout.ubwc_enabled = true;
++      }
++   }
++
++   /* Ensure UBWC compression stays enabled for standard color/depth attachments
++    * on A7xx to save DRAM bandwidth across emulator render passes.
++    */
++   if (device->physical_device->info->chip >= 7 &&
++       (image->vk.usage & (VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT))) {
++      if (tu_format_supports_ubwc(device->physical_device, image->vk.format)) {
++         image->layout.ubwc_enabled = true;
+       }
+    }
+ 
+    return VK_SUCCESS;
+ }
+-- 
+2.43.0

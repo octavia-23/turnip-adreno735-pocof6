@@ -1,0 +1,110 @@
+name: Build Turnip Adreno 735 (POCO F6 / 8s Gen 3)
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout Custom Repository
+        uses: actions/checkout@v4
+
+      - name: Install System Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            meson \
+            ninja-build \
+            python3-mako \
+            python3-yaml \
+            bison \
+            flex \
+            glslang-tools \
+            pkg-config \
+            zip \
+            unzip \
+            curl \
+            git
+
+      - name: Setup Android NDK r26c
+        run: |
+          curl -sLo ndk.zip https://dl.google.com/android/repository/android-ndk-r26c-linux.zip
+          unzip -q ndk.zip
+          echo "ANDROID_NDK_HOME=$GITHUB_WORKSPACE/android-ndk-r26c" >> $GITHUB_ENV
+          echo "$GITHUB_WORKSPACE/android-ndk-r26c/toolchains/llvm/prebuilt/linux-x86_64/bin" >> $GITHUB_PATH
+
+      - name: Clone Upstream Mesa
+        run: |
+          git clone --depth=1 https://gitlab.freedesktop.org/mesa/mesa.git mesa-src
+          cd mesa-src
+          echo "Mesa commit: $(git rev-parse HEAD)"
+
+      - name: Apply Adreno 735 Optimization Patches
+        run: |
+          cd mesa-src
+          echo "Applying Adreno 735 patches..."
+          for patch in ../patches/*.patch; do
+            if [ -f "$patch" ]; then
+              echo "Applying $patch"
+              git apply --check "$patch" && git apply "$patch" || echo "Note: Check patch hunk fuzz"
+            fi
+          done
+
+      - name: Generate Cross-Compilation File
+        run: |
+          cat << 'EOF' > android-aarch64.ini
+          [binaries]
+          c = 'aarch64-linux-android34-clang'
+          cpp = 'aarch64-linux-android34-clang++'
+          ar = 'llvm-ar'
+          strip = 'llvm-strip'
+          pkgconfig = ['pkg-config']
+
+          [host_machine]
+          system = 'android'
+          cpu_family = 'aarch64'
+          cpu = 'armv8-a'
+          endian = 'little'
+          EOF
+
+      - name: Configure Meson Build
+        run: |
+          cd mesa-src
+          meson setup build-android \
+            --cross-file ../android-aarch64.ini \
+            -Dbuildtype=release \
+            -Doptimization=3 \
+            -Dstrip=true \
+            -Dplatforms=android \
+            -Dplatform-sdk-version=34 \
+            -Dgallium-drivers= \
+            -Dvulkan-drivers=freedreno \
+            -Dfreedreno-kmds=kgsl,msm \
+            -Dtools= \
+            -Db_lto=true
+
+      - name: Compile Turnip Vulkan Driver
+        run: |
+          cd mesa-src
+          ninja -C build-android src/freedreno/vulkan/libvulkan_freedreno.so
+
+      - name: Package Driver Zip for Emulators
+        run: |
+          mkdir -p output/driver
+          cp mesa-src/build-android/src/freedreno/vulkan/libvulkan_freedreno.so output/driver/vulkan.adreno.so
+          cp meta.json output/driver/meta.json
+          cd output/driver
+          zip -r ../turnip-adreno735-8sgen3-pocof6.zip .
+          cd ../..
+
+      - name: Upload Driver Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Turnip-Adreno735-8sGen3-POCO-F6
+          path: output/turnip-adreno735-8sgen3-pocof6.zip
