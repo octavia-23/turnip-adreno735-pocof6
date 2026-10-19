@@ -86,7 +86,7 @@ jobs:
             -Dandroid-stub=true \
             -Dgallium-drivers= \
             -Dvulkan-drivers=freedreno \
-            -Dfreedreno-kmds=kgsl,msm \
+            -Dfreedreno-kmds=kgsl \
             -Dtools= \
             -Db_lto=false
 
