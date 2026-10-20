@@ -41,7 +41,7 @@ diff --git a/src/freedreno/ir3/ir3_sched.c b/src/freedreno/ir3/ir3_sched.c
 index b298a01..9f80123 100644
 --- a/src/freedreno/ir3/ir3_sched.c
 +++ b/src/freedreno/ir3/ir3_sched.c
-@@ -340,9 +340,17 @@ choose_instr(struct ir3_sched_ctx *ctx)
+@@ -340,8 +340,16 @@ choose_instr(struct ir3_sched_ctx *ctx)
     struct ir3_instruction *best = NULL;
     unsigned best_prio = 0;
  

@@ -20,7 +20,7 @@ diff --git a/src/freedreno/vulkan/tu_pass.cc b/src/freedreno/vulkan/tu_pass.cc
 index 4a12bc8..7e91fa2 100644
 --- a/src/freedreno/vulkan/tu_pass.cc
 +++ b/src/freedreno/vulkan/tu_pass.cc
-@@ -520,7 +520,13 @@ tu_render_pass_use_gmem(const struct tu_render_pass *pass,
+@@ -520,11 +520,14 @@ tu_render_pass_use_gmem(const struct tu_render_pass *pass,
     if (TU_DEBUG(SYSMEM))
        return false;
  
