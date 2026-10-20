@@ -1,38 +1,43 @@
-From 096cf39a7faffbbcf2a0c6f91dccefaf38eb41f6 Mon Sep 17 00:00:00 2001
+From b692ef2b3f897dfb0f2a6cb409fbefeb7b4532a4 Mon Sep 17 00:00:00 2001
 From: Akshat Yadav <akshatyadav237@gmail.com>
-Date: Wed, 21 Oct 2026 01:00:37 +0530
-Subject: [PATCH 2/2] drirc: embed application optimization profiles for
+Date: Wed, 21 Oct 2026 01:14:28 +0530
+Subject: [PATCH 3/3] drirc: embed application optimization profiles for
  Android emulators and shadPS4
 
 ---
- src/util/00-mesa-defaults.conf | 18 ++++++++++++++++++
- 1 file changed, 18 insertions(+)
+ src/util/00-mesa-defaults.conf | 23 +++++++++++++++++++++++
+ 1 file changed, 23 insertions(+)
 
 diff --git a/src/util/00-mesa-defaults.conf b/src/util/00-mesa-defaults.conf
-index ef70666..0799cca 100644
+index ef70666..bc5790f 100644
 --- a/src/util/00-mesa-defaults.conf
 +++ b/src/util/00-mesa-defaults.conf
-@@ -2,6 +2,24 @@
+@@ -2,6 +2,29 @@
  <!-- This file describes the drirc options that apply to all drivers. -->
  <driconf>
      <device>
 +        <!-- Snapdragon 8s Gen 3 / POCO F6 Emulator Profiles -->
 +        <application name="shadPS4 Emulator" executable="shadps4">
 +            <option name="dual_color_blend_by_location" value="true" />
++            <option name="autotune_algo" value="prefer_gmem" />
 +        </application>
 +        <application name="Winlator/Mobox DXVK" executable="wine-preloader">
 +            <option name="dual_color_blend_by_location" value="true" />
 +            <option name="vk_xwayland_wait_ready" value="false" />
++            <option name="autotune_algo" value="prefer_gmem" />
 +        </application>
 +        <application name="Winlator Native 64" executable="wine64-preloader">
 +            <option name="dual_color_blend_by_location" value="true" />
 +            <option name="vk_xwayland_wait_ready" value="false" />
++            <option name="autotune_algo" value="prefer_gmem" />
 +        </application>
 +        <application name="Sudachi Switch Emulator" executable="org.sudachi.sudachi">
 +            <option name="dual_color_blend_by_location" value="true" />
++            <option name="autotune_algo" value="prefer_gmem" />
 +        </application>
 +        <application name="Vita3K Emulator" executable="org.vita3k.emulator">
 +            <option name="dual_color_blend_by_location" value="true" />
++            <option name="autotune_algo" value="prefer_gmem" />
 +        </application>
          <application name="Akka Arrh" executable="Project-A.exe">
              <option name="allow_glsl_extension_directive_midshader" value="true" />

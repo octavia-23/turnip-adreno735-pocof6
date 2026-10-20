@@ -125,22 +125,23 @@ jobs:
       - name: Upload Driver Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Turnip-Adreno735-8sGen3-v1.3.4
+          name: Turnip-Adreno735-8sGen3-v1.3.5
           path: output/turnip-adreno735-8sgen3-pocof6.zip
 
       - name: Publish to GitHub Releases
         uses: softprops/action-gh-release@v2
         if: github.ref == 'refs/heads/main'
         with:
-          tag_name: v1.3.4
-          name: "Turnip Adreno 735 v1.3.4 (POCO F6 / 8s Gen 3)"
+          tag_name: v1.3.5
+          name: "Turnip Adreno 735 v1.3.5 (POCO F6 / 8s Gen 3)"
           body: |
-            Production optimization release for Snapdragon 8s Gen 3 (`SM8635` / Adreno 735).
+            Part 2 Hardware Optimization Release for Snapdragon 8s Gen 3 (`SM8635` / Adreno 735).
             
-            ### v1.3.4 Upstream-Verified Optimization Stack:
-            - **Native PREFER_GMEM Autotuning**: Configures Turnip's native C++ autotuner to default to `PREFER_GMEM`. Render passes stay within on-chip GMEM tiles (saving 4MB SLC and DRAM power on POCO F6) with zero runtime performance-counter profiling stutters.
-            - **Embedded drirc Profiles**: Includes pre-configured profiles in `00-mesa-defaults.conf` for **shadPS4** (PlayStation 4), **Winlator/Mobox** (DXVK/VKD3D), **Sudachi**, and **Vita3K**.
-            - **Clean Upstream Patching**: 100% verified against Mesa main with zero patch failures or hunks skipped.
+            ### Included Optimization Stack:
+            - **Native PREFER_GMEM Autotuning (0001)**: Configures Turnip's native C++ autotuner to default to `PREFER_GMEM`. Render passes stay within on-chip GMEM tiles (saving 4MB SLC and DRAM power on POCO F6) with zero runtime performance-counter profiling stutters.
+            - **IR3 Texture Queue Occupancy Cap (0002)**: Caps outstanding in-flight texture sample batches to 4 in `ir3_sched.c` for A7xx hardware. Prevents register-pressure spikes and preserves maximum thread wave occupancy across Adreno 735's 4 physical SPs.
+            - **Embedded Emulator drirc Profiles (0003)**: Includes pre-configured profiles in `00-mesa-defaults.conf` for **shadPS4** (PlayStation 4 / Bloodborne), **Winlator/Mobox** (DXVK/VKD3D), **Sudachi**, and **Vita3K**.
+            - **Upstream Verified**: 100% verified against Mesa main with strict patch enforcement and zero skipped hunks.
           files: output/turnip-adreno735-8sgen3-pocof6.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

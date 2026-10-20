@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
   "name": "Turnip Adreno 735 (POCO F6 / 8s Gen 3)",
-  "description": "Tuned for SM8635: Default PREFER_GMEM autotuning and embedded drirc profiles for Winlator, Sudachi, Vita3K, and shadPS4.",
+  "description": "Tuned for SM8635: Native PREFER_GMEM autotuning, IR3 texture queue occupancy cap (4 SPs), and embedded drirc profiles for Winlator, Sudachi, Vita3K, and shadPS4.",
   "author": "Akshat Yadav",
-  "packageVersion": "1.3.4",
+  "packageVersion": "1.3.5",
   "vendor": "Mesa/Freedreno",
-  "driverVersion": "Mesa Turnip 25.0 (SM8635 Tuned v1.3.4)",
+  "driverVersion": "Mesa Turnip 25.0 (SM8635 Tuned v1.3.5)",
   "minApi": 27,
   "libraryName": "vulkan.ad07xx.so"
 }

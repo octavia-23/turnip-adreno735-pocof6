@@ -1,0 +1,34 @@
+From f9a801f50848f6a92a670cdbcf2d8228107d28e1 Mon Sep 17 00:00:00 2001
+From: Akshat Yadav <akshatyadav237@gmail.com>
+Date: Wed, 21 Oct 2026 01:14:27 +0530
+Subject: [PATCH 2/3] freedreno/ir3: cap outstanding texture batches to 4 on
+ A7xx to protect wave occupancy
+
+---
+ src/freedreno/ir3/ir3_sched.c | 8 ++++++--
+ 1 file changed, 6 insertions(+), 2 deletions(-)
+
+diff --git a/src/freedreno/ir3/ir3_sched.c b/src/freedreno/ir3/ir3_sched.c
+index 3f7bb6f..b9fc52f 100644
+--- a/src/freedreno/ir3/ir3_sched.c
++++ b/src/freedreno/ir3/ir3_sched.c
+@@ -670,10 +670,14 @@ should_defer(struct ir3_sched_ctx *ctx, struct ir3_instruction *instr)
+     * and prevents unacceptably large increases in register pressure from too
+     * many outstanding texture instructions.
+     */
+-   if (ctx->sy_index - ctx->first_outstanding_sy_index >= 8 && is_sy_producer(instr))
++   /* Adreno 735 has 4 SPs (vs 6 on A750). Capping outstanding texture/SFU batches
++    * to 4 avoids register pressure spikes that drop wave occupancy.
++    */
++   unsigned max_outstanding = (ctx->compiler->gen >= 7) ? 4 : 8;
++   if (ctx->sy_index - ctx->first_outstanding_sy_index >= max_outstanding && is_sy_producer(instr))
+       return true;
+ 
+-   if (ctx->ss_index - ctx->first_outstanding_ss_index >= 8 && is_ss_producer(instr))
++   if (ctx->ss_index - ctx->first_outstanding_ss_index >= max_outstanding && is_ss_producer(instr))
+       return true;
+ 
+    return false;
+-- 
+2.55.0.windows.3
+
