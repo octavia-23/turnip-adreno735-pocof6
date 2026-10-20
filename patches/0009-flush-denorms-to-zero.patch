@@ -17,9 +17,8 @@ diff --git a/src/freedreno/ir3/ir3_nir.c b/src/freedreno/ir3/ir3_nir.c
 index 5f1234c..b821901 100644
 --- a/src/freedreno/ir3/ir3_nir.c
 +++ b/src/freedreno/ir3/ir3_nir.c
-@@ -218,6 +218,17 @@ ir3_optimize_loop(struct ir3_compiler *compiler, nir_shader *s)
+@@ -218,6 +218,16 @@ ir3_optimize_loop(struct ir3_compiler *compiler, nir_shader *s)
        if (compiler->gen >= 7) {
-          NIR_PASS(progress, s, nir_lower_mediump_outputs);
           NIR_PASS(progress, s, nir_opt_algebraic_late);
 +
 +         /* Force Flush-To-Zero (FTZ) on subnormals:

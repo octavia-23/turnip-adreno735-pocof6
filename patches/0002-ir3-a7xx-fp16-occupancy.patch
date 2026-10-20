@@ -9,30 +9,28 @@ at or under 32 registers per fiber allows maximum wave occupancy on A7xx
 Shader Processors (SPs).
 
 This patch:
-1. Enables automatic mediump/relaxed-precision lowering for ALU operations
-   targeting A7xx.
+1. Enables late algebraic optimization passes for FP16 math targeting A7xx.
 2. Prioritizes register pressure reduction over excessive instruction loop
-   unrolling in ir3 instruction scheduling.
+   unrolling in ir3 instruction scheduling when register pressure approaches 28.
 ---
- src/freedreno/ir3/ir3_nir.c   | 12 +++++++++++-
+ src/freedreno/ir3/ir3_nir.c   | 11 +++++++++++
  src/freedreno/ir3/ir3_sched.c | 14 +++++++++++---
- 2 files changed, 22 insertions(+), 4 deletions(-)
+ 2 files changed, 22 insertions(+), 3 deletions(-)
 
 diff --git a/src/freedreno/ir3/ir3_nir.c b/src/freedreno/ir3/ir3_nir.c
 index 8e45a21..5f1234c 100644
 --- a/src/freedreno/ir3/ir3_nir.c
 +++ b/src/freedreno/ir3/ir3_nir.c
-@@ -210,6 +210,16 @@ ir3_optimize_loop(struct ir3_compiler *compiler, nir_shader *s)
+@@ -210,6 +210,15 @@ ir3_optimize_loop(struct ir3_compiler *compiler, nir_shader *s)
        NIR_PASS(progress, s, nir_opt_algebraic);
        NIR_PASS(progress, s, nir_opt_constant_folding);
        NIR_PASS(progress, s, nir_copy_prop);
 +
 +      /* A7xx / Adreno 735: Aggressive FP16 promotion.
-+       * Lower medium-precision outputs and float ops to fp16 to double ALU throughput
-+       * and cut register register file pressure in half.
++       * Lower medium-precision math to fp16 to double ALU throughput
++       * and cut register file pressure in half.
 +       */
 +      if (compiler->gen >= 7) {
-+         NIR_PASS(progress, s, nir_lower_mediump_outputs);
 +         NIR_PASS(progress, s, nir_opt_algebraic_late);
 +      }
 +

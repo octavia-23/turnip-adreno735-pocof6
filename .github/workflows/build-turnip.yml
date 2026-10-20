@@ -125,32 +125,30 @@ jobs:
       - name: Upload Driver Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Turnip-Adreno735-8sGen3-v1.3.1
+          name: Turnip-Adreno735-8sGen3-v1.3.2
           path: output/turnip-adreno735-8sgen3-pocof6.zip
 
       - name: Publish to GitHub Releases
         uses: softprops/action-gh-release@v2
         if: github.ref == 'refs/heads/main'
         with:
-          tag_name: v1.3.1
-          name: "Turnip Adreno 735 v1.3.1 (POCO F6 / 8s Gen 3)"
+          tag_name: v1.3.2
+          name: "Turnip Adreno 735 v1.3.2 (POCO F6 / 8s Gen 3)"
           body: |
             Automated production build for Snapdragon 8s Gen 3 (`SM8635` / Adreno 735).
             
-            ### Compatibility:
-            - Fully compatible with all Android Emulators (Winlator, Mobox, Sudachi, Suyu, Eden, Vita3K)
-            - Fully compatible with Unofficial Native Android Game Ports (AdrenoTools loader minApi: 27)
-            - Bundles both `vulkan.ad07xx.so` and `vulkan.adreno.so` targets.
+            ### v1.3.2 Fixes:
+            - **Resolved GFX Artifacts in Bloodborne & Translation Layers**: Reverted unsafe LRZ retention and forced UBWC overrides to eliminate geometry culling and texture corruption.
+            - **Refined FP16 ALU Promotion**: Preserved precision on HDR and stage outputs while maintaining ALU doubling and IR3 register pressure caps.
+            - **Embedded shadPS4 drirc Profile**: Added compatibility flags for PlayStation 4 emulation.
             
-            ### Included Optimization Stack:
+            ### Hardware Optimization Stack:
             - **GMEM Binning Bias & Autotune Lock**: Eliminates sysmem fallback and runtime sampling stutter.
             - **FTZ Denormals (Flush-to-Zero)**: Removes subnormal float overhead on ALU.
-            - **Forced UBWC**: 30-50% memory bandwidth traffic reduction.
-            - **LRZ Retention**: Retains early depth testing across dynamic state switches.
             - **KGSL Submission Batching**: Reduces context switches and eliminates clock downscaling.
             - **16MB Contiguous Pools**: Prevents page faults and protects against Android LMK.
             - **D24S8 Fastpaths & 64B Sampler Alignment**: Native Direct3D depth and border handling.
-            - **Embedded drirc Profiles**: Auto-enables zero-latency flags for Winlator, Sudachi, and Vita3K.
+            - **Embedded drirc Profiles**: Auto-enables zero-latency and dual-color blend flags for Winlator, Sudachi, Vita3K, and shadPS4.
           files: output/turnip-adreno735-8sgen3-pocof6.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

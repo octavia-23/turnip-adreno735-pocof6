@@ -4,7 +4,7 @@ Date: Mon, 19 Oct 2026 13:20:00 +0530
 Subject: [PATCH] freedreno/tu: add embedded drirc application profiles for emulators and Windows engines
 
 Embeds optimized drirc configurations directly into Turnip for common
-emulators (Winlator, Mobox, Box64, Sudachi, Suyu, Ryujinx, Vita3K)
+emulators (Winlator, Mobox, Box64, Sudachi, Suyu, Ryujinx, Vita3K, shadPS4)
 and Direct3D translation layers (DXVK, VKD3D).
 
 Workarounds embedded:
@@ -13,14 +13,14 @@ Workarounds embedded:
 - Disables redundant anisotropic filtering guards.
 - Streamlines pipeline cache serialization on Android storage.
 ---
- src/freedreno/vulkan/tu_drirc.c | 24 ++++++++++++++++++++++++
- 1 file changed, 24 insertions(+)
+ src/freedreno/vulkan/tu_drirc.c | 27 +++++++++++++++++++++++++++
+ 1 file changed, 27 insertions(+)
 
 diff --git a/src/freedreno/vulkan/tu_drirc.c b/src/freedreno/vulkan/tu_drirc.c
 index 321890a..b712390 100644
 --- a/src/freedreno/vulkan/tu_drirc.c
 +++ b/src/freedreno/vulkan/tu_drirc.c
-@@ -35,6 +35,30 @@ static const char tu_dri_options_xml[] =
+@@ -35,6 +35,33 @@ static const char tu_dri_options_xml[] =
           DRI_CONF_DESC(en, "Turnip Adreno 735 Optimization Stack")
        DRI_CONF_SECTION_END
     DRI_CONF_END;
@@ -42,6 +42,9 @@ index 321890a..b712390 100644
 +   "      <option name=\"dual_color_blend_by_location\" value=\"true\" />\n"
 +   "    </application>\n"
 +   "    <application name=\"Vita3K Emulator\" executable=\"org.vita3k.emulator\">\n"
++   "      <option name=\"dual_color_blend_by_location\" value=\"true\" />\n"
++   "    </application>\n"
++   "    <application name=\"shadPS4 Emulator\" executable=\"shadps4\">\n"
 +   "      <option name=\"dual_color_blend_by_location\" value=\"true\" />\n"
 +   "    </application>\n"
 +   "  </device>\n"

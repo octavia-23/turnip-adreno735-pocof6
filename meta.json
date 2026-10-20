@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
   "name": "Turnip Adreno 735 (POCO F6 / 8s Gen 3)",
-  "description": "Tuned for SM8635: GMEM-locked, FTZ denormals, forced UBWC, LRZ early-Z, KGSL batching, D24S8 fastpaths, 64B alignment, 16MB pools, and drirc profiles.",
+  "description": "Tuned for SM8635: GMEM-locked, FTZ denormals, KGSL batching, D24S8 fastpaths, 64B alignment, 16MB pools, and drirc profiles (v1.3.2: GFX fix for Bloodborne and translation layers).",
   "author": "Akshat Yadav",
-  "packageVersion": "1.3.0",
+  "packageVersion": "1.3.2",
   "vendor": "Mesa/Freedreno",
-  "driverVersion": "Mesa Turnip 25.0 (SM8635 Tuned v1.3.0)",
+  "driverVersion": "Mesa Turnip 25.0 (SM8635 Tuned v1.3.2)",
   "minApi": 27,
   "libraryName": "vulkan.ad07xx.so"
 }
