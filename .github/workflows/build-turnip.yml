@@ -51,11 +51,11 @@ jobs:
       - name: Apply Adreno 735 Optimization Patches
         run: |
           cd mesa-src
-          echo "Applying Adreno 735 patches..."
+          echo "Applying Adreno 735 optimization patch series..."
           for patch in ../patches/*.patch; do
             if [ -f "$patch" ]; then
-              echo "Applying $patch"
-              git apply --check "$patch" && git apply "$patch" || echo "Note: Check patch hunk fuzz"
+              echo "==> Applying patch: $patch"
+              git apply --verbose "$patch"
             fi
           done
 
@@ -125,30 +125,29 @@ jobs:
       - name: Upload Driver Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Turnip-Adreno735-8sGen3-v1.3.2
+          name: Turnip-Adreno735-8sGen3-v1.3.3
           path: output/turnip-adreno735-8sgen3-pocof6.zip
 
       - name: Publish to GitHub Releases
         uses: softprops/action-gh-release@v2
         if: github.ref == 'refs/heads/main'
         with:
-          tag_name: v1.3.2
-          name: "Turnip Adreno 735 v1.3.2 (POCO F6 / 8s Gen 3)"
+          tag_name: v1.3.3
+          name: "Turnip Adreno 735 v1.3.3 (POCO F6 / 8s Gen 3)"
           body: |
-            Automated production build for Snapdragon 8s Gen 3 (`SM8635` / Adreno 735).
+            Production optimization release for Snapdragon 8s Gen 3 (`SM8635` / Adreno 735).
             
-            ### v1.3.2 Fixes:
-            - **Resolved GFX Artifacts in Bloodborne & Translation Layers**: Reverted unsafe LRZ retention and forced UBWC overrides to eliminate geometry culling and texture corruption.
-            - **Refined FP16 ALU Promotion**: Preserved precision on HDR and stage outputs while maintaining ALU doubling and IR3 register pressure caps.
-            - **Embedded shadPS4 drirc Profile**: Added compatibility flags for PlayStation 4 emulation.
+            ### v1.3.3 Architectural Refinements:
+            - **Safe Autotuner Counter Bypass**: Cleanly routes autotuning decisions to the tuned static GMEM cost model, eliminating runtime performance counter sampling stalls while guaranteeing tile feasibility.
+            - **Strict CI Patch Enforcement**: Enforced strict patch verification in CI to guarantee zero skipped or degraded hunks.
+            - **Purged Invalid Contract Overrides**: Cleaned up redundant property queries, relying on Mesa's native 64-byte sampler alignments and Vulkan 1.2 custom border colors.
             
-            ### Hardware Optimization Stack:
-            - **GMEM Binning Bias & Autotune Lock**: Eliminates sysmem fallback and runtime sampling stutter.
-            - **FTZ Denormals (Flush-to-Zero)**: Removes subnormal float overhead on ALU.
-            - **KGSL Submission Batching**: Reduces context switches and eliminates clock downscaling.
-            - **16MB Contiguous Pools**: Prevents page faults and protects against Android LMK.
-            - **D24S8 Fastpaths & 64B Sampler Alignment**: Native Direct3D depth and border handling.
-            - **Embedded drirc Profiles**: Auto-enables zero-latency and dual-color blend flags for Winlator, Sudachi, Vita3K, and shadPS4.
+            ### Included Optimization Stack:
+            - **0001 (GMEM Binning Bias)**: 1.6x sysmem penalty keeps rendering on-chip to save DRAM power and prevent POCO F6 thermal throttling.
+            - **0002 (IR3 FP16 & Reg Pressure Cap)**: Preserves maximum SP wave occupancy (< 28 registers) and doubles FP16 ALU throughput without truncating HDR/depth outputs.
+            - **0003 (Autotuner Sampling Bypass)**: Eliminates frame pacing micro-stutter by skipping dynamic counter queries.
+            - **0004 (FTZ Denormals)**: Removes subnormal float overhead on ALU execution units.
+            - **0005 (Embedded drirc Profiles)**: Pre-configured low-latency profiles for Winlator, Sudachi, Vita3K, and shadPS4.
           files: output/turnip-adreno735-8sgen3-pocof6.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
