@@ -1,34 +1,41 @@
 From f9a801f50848f6a92a670cdbcf2d8228107d28e1 Mon Sep 17 00:00:00 2001
 From: Akshat Yadav <akshatyadav237@gmail.com>
 Date: Wed, 21 Oct 2026 01:14:27 +0530
-Subject: [PATCH 2/3] freedreno/ir3: cap outstanding texture batches to 4 on
- A7xx to protect wave occupancy
+Subject: [PATCH 2/2] freedreno/ir3: cap outstanding sy batches to 6 on 4-SP A7xx GPUs
 
+Scope the outstanding texture/memory (sy) producer cap specifically to
+4-SP Adreno 7xx devices (such as Adreno 735 on SM8635) via
+ctx->compiler->gen == 7 && ctx->compiler->info->num_sp_cores <= 4.
+
+Keep the short-latency SFU (ss) cap at 8, and use 6 (instead of 4) for
+sy producers to balance register pressure against memory-latency hiding.
 ---
- src/freedreno/ir3/ir3_sched.c | 8 ++++++--
- 1 file changed, 6 insertions(+), 2 deletions(-)
+ src/freedreno/ir3/ir3_sched.c | 11 +++++++++--
+ 1 file changed, 9 insertions(+), 2 deletions(-)
 
 diff --git a/src/freedreno/ir3/ir3_sched.c b/src/freedreno/ir3/ir3_sched.c
-index 3f7bb6f..b9fc52f 100644
+index 3f7bb6f..c8e4d12 100644
 --- a/src/freedreno/ir3/ir3_sched.c
 +++ b/src/freedreno/ir3/ir3_sched.c
-@@ -670,10 +670,14 @@ should_defer(struct ir3_sched_ctx *ctx, struct ir3_instruction *instr)
+@@ -670,10 +670,18 @@ should_defer(struct ir3_sched_ctx *ctx, struct ir3_instruction *instr)
      * and prevents unacceptably large increases in register pressure from too
      * many outstanding texture instructions.
      */
 -   if (ctx->sy_index - ctx->first_outstanding_sy_index >= 8 && is_sy_producer(instr))
-+   /* Adreno 735 has 4 SPs (vs 6 on A750). Capping outstanding texture/SFU batches
-+    * to 4 avoids register pressure spikes that drop wave occupancy.
++   /* Adreno 735 (SM8635) has 4 SPs (vs 6 on A750). Slightly tighten the
++    * high-latency sy (texture/memory) window to 6 to reduce register pressure
++    * spikes without halving latency hiding, while leaving short-latency ss
++    * (SFU) at 8.
 +    */
-+   unsigned max_outstanding = (ctx->compiler->gen >= 7) ? 4 : 8;
-+   if (ctx->sy_index - ctx->first_outstanding_sy_index >= max_outstanding && is_sy_producer(instr))
++   const bool is_4sp_a7xx =
++      (ctx->compiler->gen == 7 && ctx->compiler->info->num_sp_cores <= 4);
++   const unsigned max_outstanding_sy = is_4sp_a7xx ? 6 : 8;
++   if (ctx->sy_index - ctx->first_outstanding_sy_index >= max_outstanding_sy && is_sy_producer(instr))
        return true;
  
--   if (ctx->ss_index - ctx->first_outstanding_ss_index >= 8 && is_ss_producer(instr))
-+   if (ctx->ss_index - ctx->first_outstanding_ss_index >= max_outstanding && is_ss_producer(instr))
+    if (ctx->ss_index - ctx->first_outstanding_ss_index >= 8 && is_ss_producer(instr))
        return true;
  
     return false;
 -- 
 2.55.0.windows.3
-

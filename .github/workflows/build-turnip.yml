@@ -3,17 +3,27 @@ name: Build Turnip Adreno 735 (POCO F6 / 8s Gen 3)
 on:
   push:
     branches: [ main, master ]
+    tags: [ 'v*' ]
+    paths-ignore:
+      - 'README.md'
+      - 'docs/**'
   pull_request:
     branches: [ main, master ]
+    paths-ignore:
+      - 'README.md'
+      - 'docs/**'
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-24.04
-    permissions:
-      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        variant: [ tuned, stock ]
+
     steps:
-      - name: Checkout Custom Repository
+      - name: Checkout Repository
         uses: actions/checkout@v4
 
       - name: Install System Dependencies
@@ -29,29 +39,48 @@ jobs:
             flex \
             glslang-tools \
             pkg-config \
+            patchelf \
+            jq \
+            file \
             zip \
             unzip \
             curl \
             git
-          pip3 install --break-system-packages meson
+          pip3 install --break-system-packages meson==1.6.1
 
-      - name: Setup Android NDK r26c
-        run: |
-          curl -sLo ndk.zip https://dl.google.com/android/repository/android-ndk-r26c-linux.zip
-          unzip -q ndk.zip
-          echo "ANDROID_NDK_HOME=$GITHUB_WORKSPACE/android-ndk-r26c" >> $GITHUB_ENV
-          echo "$GITHUB_WORKSPACE/android-ndk-r26c/toolchains/llvm/prebuilt/linux-x86_64/bin" >> $GITHUB_PATH
+      - name: Cache Android NDK r27c
+        id: cache-ndk
+        uses: actions/cache@v4
+        with:
+          path: android-ndk-r27c
+          key: ndk-r27c-${{ runner.os }}
 
-      - name: Clone Upstream Mesa
+      - name: Setup Android NDK r27c
         run: |
-          git clone --depth=1 https://gitlab.freedesktop.org/mesa/mesa.git mesa-src
-          cd mesa-src
-          echo "Mesa commit: $(git rev-parse HEAD)"
+          if [ "${{ steps.cache-ndk.outputs.cache-hit }}" != "true" ]; then
+            curl -fsSLo ndk.zip https://dl.google.com/android/repository/android-ndk-r27c-linux.zip
+            unzip -q ndk.zip
+            rm -f ndk.zip
+          fi
+          echo "ANDROID_NDK_HOME=$GITHUB_WORKSPACE/android-ndk-r27c" >> "$GITHUB_ENV"
+          echo "$GITHUB_WORKSPACE/android-ndk-r27c/toolchains/llvm/prebuilt/linux-x86_64/bin" >> "$GITHUB_PATH"
+
+      - name: Clone Pinned Upstream Mesa
+        run: |
+          source mesa-version.env
+          git init mesa-src
+          git -C mesa-src fetch --depth=1 https://gitlab.freedesktop.org/mesa/mesa.git "$MESA_COMMIT"
+          git -C mesa-src checkout FETCH_HEAD
+          MESA_VERSION="$(tr -d '\r\n' < mesa-src/VERSION)"
+          MESA_SHA="$(git -C mesa-src rev-parse --short=7 HEAD)"
+          echo "MESA_VERSION=$MESA_VERSION" >> "$GITHUB_ENV"
+          echo "MESA_SHA=$MESA_SHA" >> "$GITHUB_ENV"
+          echo "Pinned Mesa: $MESA_VERSION ($MESA_SHA / $MESA_COMMIT)"
 
       - name: Apply Adreno 735 Optimization Patches
+        if: matrix.variant == 'tuned'
         run: |
           cd mesa-src
-          echo "Applying Adreno 735 optimization patch series..."
           for patch in ../patches/*.patch; do
             if [ -f "$patch" ]; then
               echo "==> Applying patch: $patch"
@@ -70,8 +99,8 @@ jobs:
           pkg-config = ['pkg-config']
 
           [built-in options]
-          c_args = ['-I$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include']
-          cpp_args = ['-I$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include']
+          c_args = ['-I$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include', '-O3', '-march=armv8.2-a+dotprod+fp16', '-mtune=cortex-a720']
+          cpp_args = ['-I$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include', '-O3', '-march=armv8.2-a+dotprod+fp16', '-mtune=cortex-a720']
 
           [properties]
           sys_root = '$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/sysroot'
@@ -91,6 +120,8 @@ jobs:
             --cross-file ../android-aarch64.ini \
             -Dbuildtype=release \
             -Dstrip=true \
+            -Db_lto=true \
+            -Db_lto_mode=thin \
             -Dplatforms=android \
             -Dplatform-sdk-version=34 \
             -Dandroid-stub=true \
@@ -104,44 +135,108 @@ jobs:
             -Dgallium-drivers= \
             -Dvulkan-drivers=freedreno \
             -Dfreedreno-kmds=kgsl \
-            -Dtools= \
-            -Db_lto=false
+            -Dtools=
 
       - name: Compile Turnip Vulkan Driver
         run: |
           cd mesa-src
           ninja -C build-android src/freedreno/vulkan/libvulkan_freedreno.so
 
-      - name: Package Driver Zip for Emulators and Native Ports
+      - name: Package & Validate Driver Zip
         run: |
           mkdir -p output/driver
           cp mesa-src/build-android/src/freedreno/vulkan/libvulkan_freedreno.so output/driver/vulkan.ad07xx.so
-          cp mesa-src/build-android/src/freedreno/vulkan/libvulkan_freedreno.so output/driver/vulkan.adreno.so
-          cp meta.json output/driver/meta.json
-          cd output/driver
-          zip -r ../turnip-adreno735-8sgen3-pocof6.zip .
-          cd ../..
+          patchelf --set-soname vulkan.ad07xx.so output/driver/vulkan.ad07xx.so
+
+          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            PKG_VER="${GITHUB_REF_NAME#v}"
+          else
+            PKG_VER="dev-${MESA_SHA}"
+          fi
+
+          if [ "${{ matrix.variant }}" = "tuned" ]; then
+            VARIANT_LABEL="Tuned"
+            NAME_SUFFIX=""
+            DESC_TEXT="Tuned for SM8635: PREFER_GMEM autotuning, 4-SP A7xx ir3 sy scheduling cap (6), and ARMv8.2-a+dotprod+fp16 ThinLTO build."
+          else
+            VARIANT_LABEL="Stock"
+            NAME_SUFFIX=" [Stock]"
+            DESC_TEXT="Unpatched upstream Mesa Turnip (${MESA_SHA}) built with ARMv8.2-a+dotprod+fp16 ThinLTO for A/B comparison."
+          fi
+
+          jq \
+            --arg name "Turnip Adreno 735 (POCO F6 / 8s Gen 3)${NAME_SUFFIX}" \
+            --arg desc "$DESC_TEXT" \
+            --arg pkgVer "$PKG_VER" \
+            --arg drvVer "Mesa ${MESA_VERSION} (${MESA_SHA}) - SM8635 ${VARIANT_LABEL} ${PKG_VER}" \
+            '.name = $name | .description = $desc | .packageVersion = $pkgVer | .driverVersion = $drvVer' \
+            meta.json > output/driver/meta.json
+
+          echo "=== Sanity Checks ==="
+          file output/driver/vulkan.ad07xx.so | grep -q "ELF 64-bit LSB shared object, ARM aarch64"
+          llvm-readelf -d output/driver/vulkan.ad07xx.so | tee /tmp/readelf.txt
+          grep -q "SONAME.*\[vulkan\.ad07xx\.so\]" /tmp/readelf.txt
+          if grep -E "NEEDED.*(libstdc\+\+|libgcc_s|libz\.so)" /tmp/readelf.txt; then
+            echo "Unexpected non-Android DT_NEEDED dependency found!"
+            exit 1
+          fi
+          jq empty output/driver/meta.json
+          LIB_NAME="$(jq -r '.libraryName' output/driver/meta.json)"
+          test -f "output/driver/${LIB_NAME}"
+
+          ZIP_NAME="turnip-adreno735-8sgen3-pocof6-${{ matrix.variant }}.zip"
+          (cd output/driver && zip -r "../${ZIP_NAME}" .)
+          (cd output && sha256sum "${ZIP_NAME}" > "${ZIP_NAME}.sha256")
+          echo "Packaged output/${ZIP_NAME}"
 
       - name: Upload Driver Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Turnip-Adreno735-8sGen3-v1.3.5
-          path: output/turnip-adreno735-8sgen3-pocof6.zip
+          name: turnip-adreno735-${{ matrix.variant }}
+          path: |
+            output/turnip-adreno735-8sgen3-pocof6-${{ matrix.variant }}.zip
+            output/turnip-adreno735-8sgen3-pocof6-${{ matrix.variant }}.zip.sha256
+
+  release:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Download Built Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-assets
+          merge-multiple: true
+
+      - name: Prepare Release Metadata
+        run: |
+          source mesa-version.env
+          echo "MESA_COMMIT=$MESA_COMMIT" >> "$GITHUB_ENV"
+          (cd release-assets && sha256sum *.zip > SHA256SUMS.txt)
+          cat release-assets/SHA256SUMS.txt
 
       - name: Publish to GitHub Releases
         uses: softprops/action-gh-release@v2
-        if: github.ref == 'refs/heads/main'
         with:
-          tag_name: v1.3.5
-          name: "Turnip Adreno 735 v1.3.5 (POCO F6 / 8s Gen 3)"
+          tag_name: ${{ github.ref_name }}
+          name: "Turnip Adreno 735 ${{ github.ref_name }} (POCO F6 / 8s Gen 3)"
           body: |
-            Part 2 Hardware Optimization Release for Snapdragon 8s Gen 3 (`SM8635` / Adreno 735).
-            
-            ### Included Optimization Stack:
-            - **Native PREFER_GMEM Autotuning (0001)**: Configures Turnip's native C++ autotuner to default to `PREFER_GMEM`. Render passes stay within on-chip GMEM tiles (saving 4MB SLC and DRAM power on POCO F6) with zero runtime performance-counter profiling stutters.
-            - **IR3 Texture Queue Occupancy Cap (0002)**: Caps outstanding in-flight texture sample batches to 4 in `ir3_sched.c` for A7xx hardware. Prevents register-pressure spikes and preserves maximum thread wave occupancy across Adreno 735's 4 physical SPs.
-            - **Embedded Emulator drirc Profiles (0003)**: Includes pre-configured profiles in `00-mesa-defaults.conf` for **shadPS4** (PlayStation 4 / Bloodborne), **Winlator/Mobox** (DXVK/VKD3D), **Sudachi**, and **Vita3K**.
-            - **Upstream Verified**: 100% verified against Mesa main with strict patch enforcement and zero skipped hunks.
-          files: output/turnip-adreno735-8sgen3-pocof6.zip
+            Release `${{ github.ref_name }}` for Snapdragon 8s Gen 3 (`SM8635` / Adreno 735, Android 14+ / API 34).
+
+            ### Provenance
+            - **Pinned Mesa Commit**: `${{ env.MESA_COMMIT }}`
+            - **Toolchain**: Android NDK `r27c` (`aarch64-linux-android34-clang`, `-O3 -march=armv8.2-a+dotprod+fp16 -mtune=cortex-a720`, ThinLTO)
+
+            ### Variants
+            - **`turnip-adreno735-8sgen3-pocof6-tuned.zip`**: Includes the SM8635 patch stack (`PREFER_GMEM` autotuning default + 4-SP A7xx `ir3_sched.c` `sy` window cap at 6).
+            - **`turnip-adreno735-8sgen3-pocof6-stock.zip`**: Unpatched upstream Mesa from the exact same commit for A/B bug bisection.
+          files: |
+            release-assets/*.zip
+            release-assets/SHA256SUMS.txt
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

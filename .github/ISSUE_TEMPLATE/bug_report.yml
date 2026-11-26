@@ -1,0 +1,65 @@
+name: Bug Report
+description: Report a graphical glitch, crash, or performance regression
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: dropdown
+    id: variant
+    attributes:
+      label: Driver Variant
+      description: Did you test both the tuned and stock builds from the same release?
+      options:
+        - Tuned (SM8635)
+        - Stock (unpatched Mesa)
+        - Both (reproduces on both)
+        - Only Tuned (stock works fine)
+    validations:
+      required: true
+
+  - type: input
+    id: release_version
+    attributes:
+      label: Release Tag / Mesa SHA
+      description: Copy the driverVersion string from meta.json or the release tag (e.g. v1.4.0 / 4b91430)
+      placeholder: "v1.4.0 (Mesa 27.0.0-devel / 4b91430)"
+    validations:
+      required: true
+
+  - type: input
+    id: device_os
+    attributes:
+      label: Device & Android Version
+      placeholder: "POCO F6 (peridot), HyperOS / Android 14"
+    validations:
+      required: true
+
+  - type: input
+    id: emulator
+    attributes:
+      label: Emulator / App & Version
+      placeholder: "shadPS4 v0.x / Winlator 8.0 / Sudachi"
+    validations:
+      required: true
+
+  - type: input
+    id: game
+    attributes:
+      label: Game Title
+      placeholder: "Bloodborne"
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: Describe the graphical issue, crash, or performance regression.
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs (adb logcat / TU_DEBUG)
+      description: Optional output from `adb logcat` or `TU_DEBUG=startup,ir3`.
+      render: shell

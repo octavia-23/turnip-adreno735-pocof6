@@ -1,6 +1,6 @@
 # Turnip Vulkan Driver: Adreno 735 (Snapdragon 8s Gen 3)
 
-Custom build recipes and patch stack for the open-source Mesa Turnip Vulkan driver, configured for Qualcomm Snapdragon 8s Gen 3 (`SM8635`) / Adreno 735 devices (such as POCO F6 `peridot`, Xiaomi Civi 4 Pro, and Realme GT Neo 6).
+Custom build recipes and patch stack for the open-source Mesa Turnip Vulkan driver, configured for Qualcomm Snapdragon 8s Gen 3 (`SM8635`) / Adreno 735 devices (such as POCO F6 `peridot`, Xiaomi Civi 4 Pro, and Realme GT Neo 6) on Android 14+ (`minApi: 34`).
 
 ---
 
@@ -16,25 +16,29 @@ The Snapdragon 8s Gen 3 (`SM8635`) features an Adreno 735 GPU, which differs in 
 ## Applied Patch Stack
 
 * **`0001-freedreno-tu-default-to-PREFER_GMEM-autotuning-for-A.patch`**
-  - Sets Turnip's autotuner default mode to `PREFER_GMEM` for Adreno 7xx.
+  - Sets Turnip's autotuner default mode to `PREFER_GMEM` while preserving the `TU_AUTOTUNE_ALGO` runtime override.
   - Encourages tiled on-chip rendering to reduce external memory round-trips and keep rendering passes within GMEM buffers where feasible.
 
 * **`0002-freedreno-ir3-cap-outstanding-texture-batches-to-4-o.patch`**
-  - Caps outstanding texture sample and SFU instructions from 8 to 4 in `ir3_sched.c` for A7xx hardware.
-  - Helps limit register pressure while waiting on high-latency memory fetches to maintain warp occupancy across the 4 physical SPs.
+  - Scoped specifically to 4-SP Adreno 7xx hardware (`ctx->compiler->gen == 7 && ctx->compiler->info->num_sp_cores <= 4`).
+  - Caps high-latency outstanding `sy` (texture/memory) batches to 6 (down from 8) to reduce register-pressure spikes while preserving latency hiding, and leaves short-latency `ss` (SFU) batches at 8.
 
-* **`0003-drirc-embed-application-optimization-profiles-for-An.patch`**
-  - Embeds configuration overrides into `00-mesa-defaults.conf` for Android emulator runtimes (including Winlator, Mobox, shadPS4, and Vita3K) to optimize swapchain presentation and synchronization settings.
+---
+
+## Build & Performance Configuration
+
+* **Pinned Upstream Mesa**: Built against the exact commit in [`mesa-version.env`](mesa-version.env) for reproducible builds and clean bug bisection.
+* **Toolchain & CPU Tuning**: Compiled with Android NDK `r27c` (`aarch64-linux-android34-clang`), `-O3 -march=armv8.2-a+dotprod+fp16 -mtune=cortex-a720`, and ThinLTO (`-Db_lto=true -Db_lto_mode=thin`) for faster host-side NIR/ir3 shader compilation and Vulkan command recording.
+* **Dual-Variant Releases**: Tagging `v*` publishes both `turnip-adreno735-8sgen3-pocof6-tuned.zip` and `turnip-adreno735-8sgen3-pocof6-stock.zip` (plus `SHA256SUMS.txt`) so regressions can be isolated between upstream Mesa and the SM8635 patch stack.
 
 ---
 
 ## Building from Source
 
-This repository builds automatically via GitHub Actions:
 1. Fork or push to your repository.
-2. In the GitHub **Actions** tab, the build workflow uses Android NDK r26c to compile Mesa Turnip.
-3. The resulting installable driver package `Turnip-Adreno735-8sGen3-POCO-F6.zip` is published under **Releases** and **Artifacts**.
-4. The `.zip` archive can be loaded into your emulator's custom graphics driver manager.
+2. Push/PR runs CI build verification and ELF/metadata sanity checks, uploading artifacts.
+3. Push a version tag (`git tag v1.4.0 && git push origin v1.4.0`) to publish the dual-variant release under **Releases**.
+4. Load the `.zip` archive into your emulator's custom graphics driver manager.
 
 ---
 
