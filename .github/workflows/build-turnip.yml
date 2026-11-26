@@ -46,7 +46,7 @@ jobs:
             unzip \
             curl \
             git
-          pip3 install --break-system-packages meson==1.6.1
+          pip3 install --break-system-packages meson==1.7.2
 
       - name: Cache Android NDK r27c
         id: cache-ndk

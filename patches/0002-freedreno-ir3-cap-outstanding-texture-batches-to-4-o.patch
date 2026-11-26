@@ -17,7 +17,7 @@ diff --git a/src/freedreno/ir3/ir3_sched.c b/src/freedreno/ir3/ir3_sched.c
 index 3f7bb6f..c8e4d12 100644
 --- a/src/freedreno/ir3/ir3_sched.c
 +++ b/src/freedreno/ir3/ir3_sched.c
-@@ -670,10 +670,18 @@ should_defer(struct ir3_sched_ctx *ctx, struct ir3_instruction *instr)
+@@ -773,10 +773,18 @@ should_defer(struct ir3_sched_ctx *ctx, struct ir3_instruction *instr)
      * and prevents unacceptably large increases in register pressure from too
      * many outstanding texture instructions.
      */
@@ -36,6 +36,6 @@ index 3f7bb6f..c8e4d12 100644
     if (ctx->ss_index - ctx->first_outstanding_ss_index >= 8 && is_ss_producer(instr))
        return true;
  
-    return false;
+    if (writes_addr0(instr) && ctx->addr0)
 -- 
 2.55.0.windows.3
