@@ -120,8 +120,7 @@ jobs:
             --cross-file ../android-aarch64.ini \
             -Dbuildtype=release \
             -Dstrip=true \
-            -Db_lto=true \
-            -Db_lto_mode=thin \
+            -Db_lto=false \
             -Dplatforms=android \
             -Dplatform-sdk-version=34 \
             -Dandroid-stub=true \
@@ -157,11 +156,11 @@ jobs:
           if [ "${{ matrix.variant }}" = "tuned" ]; then
             VARIANT_LABEL="Tuned"
             NAME_SUFFIX=""
-            DESC_TEXT="Tuned for SM8635: PREFER_GMEM autotuning, 4-SP A7xx ir3 sy scheduling cap (6), and ARMv8.2-a+dotprod+fp16 ThinLTO build."
+            DESC_TEXT="Tuned for SM8635: PREFER_GMEM autotuning, 4-SP A7xx ir3 sy scheduling cap (6), and ARMv8.2-a+dotprod+fp16 NDK r27c build."
           else
             VARIANT_LABEL="Stock"
             NAME_SUFFIX=" [Stock]"
-            DESC_TEXT="Unpatched upstream Mesa Turnip (${MESA_SHA}) built with ARMv8.2-a+dotprod+fp16 ThinLTO for A/B comparison."
+            DESC_TEXT="Unpatched upstream Mesa Turnip (${MESA_SHA}) built with ARMv8.2-a+dotprod+fp16 NDK r27c for A/B comparison."
           fi
 
           jq \

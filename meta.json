@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "name": "Turnip Adreno 735 (POCO F6 / 8s Gen 3)",
-  "description": "Tuned for SM8635: PREFER_GMEM autotuning, 4-SP A7xx ir3 sy scheduling cap (6), and ARMv8.2-a+dotprod+fp16 LTO build.",
+  "description": "Tuned for SM8635: PREFER_GMEM autotuning, 4-SP A7xx ir3 sy scheduling cap (6), and ARMv8.2-a+dotprod+fp16 NDK r27c build.",
   "author": "Akshat Yadav",
   "packageVersion": "1.4.0",
   "vendor": "Mesa/Freedreno",

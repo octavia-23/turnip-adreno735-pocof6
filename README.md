@@ -28,7 +28,7 @@ The Snapdragon 8s Gen 3 (`SM8635`) features an Adreno 735 GPU, which differs in 
 ## Build & Performance Configuration
 
 * **Pinned Upstream Mesa**: Built against the exact commit in [`mesa-version.env`](mesa-version.env) for reproducible builds and clean bug bisection.
-* **Toolchain & CPU Tuning**: Compiled with Android NDK `r27c` (`aarch64-linux-android34-clang`), `-O3 -march=armv8.2-a+dotprod+fp16 -mtune=cortex-a720`, and ThinLTO (`-Db_lto=true -Db_lto_mode=thin`) for faster host-side NIR/ir3 shader compilation and Vulkan command recording.
+* **Toolchain & CPU Tuning**: Compiled with Android NDK `r27c` (`aarch64-linux-android34-clang`) and `-O3 -march=armv8.2-a+dotprod+fp16 -mtune=cortex-a720` for faster host-side NIR/ir3 shader compilation and Vulkan command recording.
 * **Dual-Variant Releases**: Tagging `v*` publishes both `turnip-adreno735-8sgen3-pocof6-tuned.zip` and `turnip-adreno735-8sgen3-pocof6-stock.zip` (plus `SHA256SUMS.txt`) so regressions can be isolated between upstream Mesa and the SM8635 patch stack.
 
 ---
