@@ -175,7 +175,7 @@ jobs:
           file output/driver/vulkan.ad07xx.so | grep -q "ELF 64-bit LSB shared object, ARM aarch64"
           llvm-readelf -d output/driver/vulkan.ad07xx.so | tee /tmp/readelf.txt
           grep -q "SONAME.*\[vulkan\.ad07xx\.so\]" /tmp/readelf.txt
-          if grep -E "NEEDED.*(libstdc\+\+|libgcc_s|libz\.so)" /tmp/readelf.txt; then
+          if grep -E "NEEDED.*(libstdc\+\+|libgcc_s|libdrm)" /tmp/readelf.txt; then
             echo "Unexpected non-Android DT_NEEDED dependency found!"
             exit 1
           fi
